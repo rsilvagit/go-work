@@ -36,7 +36,6 @@ jobs:
       - name: Run go-work
         env:
           SEARCH_QUERY: ${{ secrets.SEARCH_QUERY }}
-          SEARCH_LOCATION: ${{ secrets.SEARCH_LOCATION }}
           SEARCH_TIPO: ${{ secrets.SEARCH_TIPO }}
           SEARCH_MODELO: ${{ secrets.SEARCH_MODELO }}
           SEARCH_NIVEL: ${{ secrets.SEARCH_NIVEL }}

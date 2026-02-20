@@ -1,16 +1,17 @@
 # go-work
 
-Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem avançada, proteções anti-ban, cache Redis e notificações via Telegram e Discord. Execução automatizada via GitHub Actions (cron diário gratuito).
+Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem avançada, proteções anti-ban e notificações via Discord. Execução automatizada via GitHub Actions (cron diário gratuito).
 
 ## Funcionalidades
 
 - **API Gupy** — Consome a API JSON pública (`employability-portal.gupy.io`) — sem parsing de HTML, dados estruturados
+- **Multi-query** — Busca múltiplas stacks em paralelo (`golang,python,c#`)
 - **Proteção anti-ban** — User-Agent rotation, headers realistas, rate limiting com jitter, retry com exponential backoff e suporte a proxy
-- **Cache Redis** — Evita requests repetidos com TTL configurável (padrão: 1h)
-- **Filtragem avançada** — Por tipo de vaga, modelo de trabalho, nível de experiência e região
+- **Cache Redis** — Evita requests repetidos com TTL configurável (opcional)
+- **Filtragem avançada** — Por tipo de vaga, modelo de trabalho (`remoto,hibrido`), nível e região. Suporta múltiplos valores por vírgula
 - **Deduplicação** — Remove vagas duplicadas automaticamente
-- **Notificação Telegram** — Envio dos resultados diretamente para um chat/grupo no Telegram
 - **Notificação Discord** — Envio via Webhook com formatação Markdown e chunking automático (limite 2000 chars)
+- **Notificação Telegram** — Envio dos resultados diretamente para um chat/grupo
 - **Saída formatada** — Exibição em tabela no terminal
 - **Cron GitHub Actions** — Execução automática diária às 12h UTC / 9h BRT (gratuito)
 - **Auto-run on push** — Executa automaticamente a cada push em `main`
@@ -19,13 +20,12 @@ Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem 
 ## Tech Stack
 
 - **Go 1.25** — Concorrência nativa com goroutines
-- **Redis** — Cache de resultados para reduzir requests
-- **Docker + Compose** — Orquestração de app + Redis
+- **GitHub Actions** — Cron diário + CI/CD
+- **Docker + Compose** — Para desenvolvimento local
 
 ## Pré-requisitos
 
 - Go 1.25+ ou Docker
-- Redis (opcional — sem ele a app funciona normalmente, apenas sem cache)
 
 ## Instalação
 
@@ -41,37 +41,33 @@ go build -o go-work ./cmd/go-work
 # Busca básica
 ./go-work -q "golang"
 
-# Com filtros
-./go-work -q "developer" -modelo remoto -nivel senior -tipo full-time
+# Múltiplas stacks
+./go-work -q "golang,python,c#"
 
-# Com cache Redis
-./go-work -q "developer" -redis-url "redis://localhost:6379"
+# Com filtros (suporta múltiplos valores por vírgula)
+./go-work -q "golang,python" -modelo "remoto,hibrido" -nivel senior
 
-# Com proxy
-./go-work -q "developer" -proxy "http://proxy:8080"
+# Com notificação Discord
+./go-work -q "golang,python,c#" -modelo "remoto,hibrido" \
+  -discord-webhook "$DISCORD_WEBHOOK_URL"
 
 # Com notificação Telegram
 ./go-work -q "developer" \
   -telegram-token "$TELEGRAM_TOKEN" \
   -telegram-chat-id "$TELEGRAM_CHAT_ID"
 
-# Com notificação Discord
-./go-work -q "developer" \
-  -discord-webhook "$DISCORD_WEBHOOK_URL"
+# Com cache Redis
+./go-work -q "developer" -redis-url "redis://localhost:6379"
 
-# Com Telegram + Discord
-./go-work -q "golang developer" -modelo remoto \
-  -telegram-token "$TELEGRAM_TOKEN" \
-  -telegram-chat-id "$TELEGRAM_CHAT_ID" \
-  -discord-webhook "$DISCORD_WEBHOOK_URL"
+# Com proxy
+./go-work -q "developer" -proxy "http://proxy:8080"
 ```
 
 ### Flags
 
 | Flag | Descrição | Padrão |
 |------|-----------|--------|
-| `-q` | Termo de busca (obrigatório) | — |
-| `-l` | Localização | — |
+| `-q` | Termos de busca separados por vírgula (obrigatório) | — |
 | `-timeout` | Timeout por scraper | `30s` |
 | `-tipo` | Tipo de vaga (`full-time`, `part-time`, `estagio`, `freelance`) | — |
 | `-modelo` | Modelo de trabalho (`remoto`, `hibrido`, `presencial`) | — |
@@ -86,6 +82,8 @@ go build -o go-work ./cmd/go-work
 | `-telegram-chat-id` | Chat ID do Telegram | — |
 | `-discord-webhook` | URL do Webhook Discord | — |
 
+Flags e filtros suportam múltiplos valores separados por vírgula (ex: `-q "golang,python"`, `-modelo "remoto,hibrido"`).
+
 ## Docker Compose
 
 ```bash
@@ -97,7 +95,7 @@ docker-compose up -d redis
 ./go-work -q "golang" -redis-url "redis://localhost:6379"
 
 # Executar busca via compose
-docker-compose run --rm go-work -q "golang developer"
+docker-compose run --rm go-work -q "golang,python"
 ```
 
 ## Variáveis de Ambiente
@@ -110,17 +108,13 @@ cp .env.example .env
 
 ```env
 # Busca
-SEARCH_QUERY=golang developer
-SEARCH_LOCATION=Brasil
-SEARCH_TIPO=full-time
-SEARCH_MODELO=remoto
-SEARCH_NIVEL=senior
-SEARCH_REGIAO=São Paulo
+SEARCH_QUERY=golang,python,c#
+SEARCH_MODELO=remoto,hibrido
 
 # Notificações
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 TELEGRAM_TOKEN=seu_token_aqui
 TELEGRAM_CHAT_ID=seu_chat_id_aqui
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 
 # Infraestrutura (opcional)
 REDIS_URL=redis://localhost:6379
@@ -136,12 +130,12 @@ go-work/
 ├── cmd/go-work/           # Entrypoint da aplicação
 ├── internal/
 │   ├── httpclient/        # HTTP client com proteções anti-ban
-│   ├── cache/             # Cache Redis
+│   ├── cache/             # Cache Redis (opcional)
 │   ├── model/             # Modelo de dados (Job)
 │   ├── scraper/           # Scraper Gupy (API JSON)
 │   ├── filter/            # Filtros de vagas
 │   └── output/            # Writers (Console, Telegram, Discord)
-├── .github/workflows/     # CI/CD + Cron (GitHub Actions)
+├── .github/workflows/     # Cron + CI (GitHub Actions)
 ├── docker-compose.yml
 ├── Dockerfile
 ├── .env.example
@@ -152,18 +146,17 @@ go-work/
 
 ```
 ┌─────────┐    ┌─────────────┐              ┌───────────┐    ┌─────────┐    ┌─────────┐
-│ CLI Flags├───►│ Cache Redis ├─miss────────►│ httpclient├───►│ Filtros ├───►│ Output  │
+│ CLI/Env  ├───►│ Cache Redis ├─miss────────►│ httpclient├───►│ Filtros ├───►│ Output  │
 └─────────┘    └──────┬──────┘              └─────┬─────┘    └─────────┘    └─────────┘
                       │                           │                          ├─ Console
-                      │    ┌────────────────┐     │ UA Rotation              ├─ Telegram
-                      └───►│ Gupy API (JSON)│     │ Rate Limit               └─ Discord
-
+                      │    ┌────────────────┐     │ UA Rotation              ├─ Discord
+                      └───►│ Gupy API (JSON)│     │ Rate Limit               └─ Telegram
                            └────────────────┘     │ Retry/Backoff
                                                   │ Proxy
                                                   │ Headers
 ```
 
-O scraper consome a API JSON pública da Gupy, sem necessidade de parsear HTML. O cache Redis é verificado antes de cada busca — em caso de hit, a API não é chamada.
+Cada termo de busca gera uma goroutine separada. Os resultados são combinados, deduplicados e filtrados antes do envio.
 
 ## Proteções Anti-Ban
 
@@ -176,7 +169,7 @@ O scraper consome a API JSON pública da Gupy, sem necessidade de parsear HTML. 
 | **Proxy** | Suporte a proxy HTTP/HTTPS para rotação de IP |
 | **Cache Redis** | Reduz volume de requests com TTL configurável |
 
-## GitHub Actions (Cron + CI/CD)
+## GitHub Actions (Cron + CI)
 
 O workflow em `.github/workflows/deploy.yml` faz tudo:
 
@@ -190,19 +183,18 @@ O workflow em `.github/workflows/deploy.yml` faz tudo:
 2. Adicione os **Repository Secrets** abaixo
 3. Pronto — o cron roda diariamente e envia as vagas para Discord/Telegram
 
-### GitHub Secrets (obrigatório)
+### GitHub Secrets
 
 | Secret | Descrição |
 |---|---|
-| `SEARCH_QUERY` | Termo de busca (obrigatório) |
-| `TELEGRAM_TOKEN` | Token do Bot Telegram |
-| `TELEGRAM_CHAT_ID` | Chat ID do Telegram |
+| `SEARCH_QUERY` | Termos de busca separados por vírgula (obrigatório). Ex: `golang,python,c#` |
 | `DISCORD_WEBHOOK_URL` | URL do Webhook Discord |
-| `SEARCH_LOCATION` | Localização (opcional) |
-| `SEARCH_TIPO` | Tipo de vaga (opcional) |
-| `SEARCH_MODELO` | Modelo de trabalho (opcional) |
-| `SEARCH_NIVEL` | Nível (opcional) |
+| `SEARCH_MODELO` | Modelo de trabalho (opcional). Ex: `remoto,hibrido` |
+| `SEARCH_TIPO` | Tipo de vaga (opcional). Ex: `full-time` |
+| `SEARCH_NIVEL` | Nível (opcional). Ex: `senior` |
 | `SEARCH_REGIAO` | Região (opcional) |
+| `TELEGRAM_TOKEN` | Token do Bot Telegram (opcional) |
+| `TELEGRAM_CHAT_ID` | Chat ID do Telegram (opcional) |
 | `PROXY_URL` | URL do proxy (opcional) |
 
 ### Execução manual
