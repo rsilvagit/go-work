@@ -1,0 +1,10 @@
+.git
+.env
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+README.md
+LICENSE
