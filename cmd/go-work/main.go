@@ -58,6 +58,7 @@ func main() {
 	timeout := flag.Duration("timeout", 30*time.Second, "Timeout por scraper")
 	telegramToken := flag.String("telegram-token", "", "Token do bot Telegram")
 	telegramChatID := flag.String("telegram-chat-id", "", "Chat ID do Telegram")
+	discordWebhook := flag.String("discord-webhook", "", "URL do Webhook Discord")
 	jobType := flag.String("tipo", "", "Tipo de vaga: full-time, part-time, estagio, freelance")
 	workModel := flag.String("modelo", "", "Modelo: remoto, hibrido, presencial")
 	level := flag.String("nivel", "", "Nível: junior, pleno, senior")
@@ -69,10 +70,27 @@ func main() {
 	maxDelay := flag.Duration("max-delay", 5*time.Second, "Delay máximo entre requests ao mesmo domínio")
 	flag.Parse()
 
-	if *query == "" {
-		fmt.Fprintln(os.Stderr, "Erro: -q (query) é obrigatório")
+	// Resolver flags com fallback para env vars.
+	q := envOrFlag(*query, "SEARCH_QUERY")
+	loc := envOrFlag(*location, "SEARCH_LOCATION")
+	jt := envOrFlag(*jobType, "SEARCH_TIPO")
+	wm := envOrFlag(*workModel, "SEARCH_MODELO")
+	lv := envOrFlag(*level, "SEARCH_NIVEL")
+	rg := envOrFlag(*region, "SEARCH_REGIAO")
+
+	if q == "" {
+		fmt.Fprintln(os.Stderr, "Erro: -q (query) ou SEARCH_QUERY é obrigatório")
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// Suporte a múltiplos termos separados por vírgula.
+	var queries []string
+	for _, term := range strings.Split(q, ",") {
+		term = strings.TrimSpace(term)
+		if term != "" {
+			queries = append(queries, term)
+		}
 	}
 
 	// HTTP client com proteções anti-ban.
@@ -109,39 +127,41 @@ func main() {
 	)
 
 	for _, s := range scrapers {
-		wg.Add(1)
-		go func(s scraper.Scraper) {
-			defer wg.Done()
+		for _, term := range queries {
+			wg.Add(1)
+			go func(s scraper.Scraper, term string) {
+				defer wg.Done()
 
-			// Verificar cache primeiro.
-			if jobCache != nil {
-				if cached, ok := jobCache.Get(ctx, s.Name(), *query, *location); ok {
-					fmt.Printf("[cache hit] %s: %d vaga(s) do cache\n", s.Name(), len(cached))
-					mu.Lock()
-					allJobs = append(allJobs, cached...)
-					mu.Unlock()
+				// Verificar cache primeiro.
+				if jobCache != nil {
+					if cached, ok := jobCache.Get(ctx, s.Name(), term, loc); ok {
+						fmt.Printf("[cache hit] %s (%s): %d vaga(s) do cache\n", s.Name(), term, len(cached))
+						mu.Lock()
+						allJobs = append(allJobs, cached...)
+						mu.Unlock()
+						return
+					}
+				}
+
+				fmt.Printf("Buscando \"%s\" em %s...\n", term, s.Name())
+				jobs, err := s.Search(ctx, term, loc)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Aviso: %s (%s) falhou: %v\n", s.Name(), term, err)
 					return
 				}
-			}
 
-			fmt.Printf("Buscando em %s...\n", s.Name())
-			jobs, err := s.Search(ctx, *query, *location)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Aviso: %s falhou: %v\n", s.Name(), err)
-				return
-			}
-
-			// Salvar no cache.
-			if jobCache != nil && len(jobs) > 0 {
-				if err := jobCache.Set(ctx, s.Name(), *query, *location, jobs); err != nil {
-					fmt.Fprintf(os.Stderr, "Aviso: falha ao salvar cache para %s: %v\n", s.Name(), err)
+				// Salvar no cache.
+				if jobCache != nil && len(jobs) > 0 {
+					if err := jobCache.Set(ctx, s.Name(), term, loc, jobs); err != nil {
+						fmt.Fprintf(os.Stderr, "Aviso: falha ao salvar cache para %s (%s): %v\n", s.Name(), term, err)
+					}
 				}
-			}
 
-			mu.Lock()
-			allJobs = append(allJobs, jobs...)
-			mu.Unlock()
-		}(s)
+				mu.Lock()
+				allJobs = append(allJobs, jobs...)
+				mu.Unlock()
+			}(s, term)
+		}
 	}
 	wg.Wait()
 
@@ -158,10 +178,10 @@ func main() {
 
 	// Apply filters.
 	uniqueJobs = filter.Apply(uniqueJobs, filter.Options{
-		JobType:   *jobType,
-		WorkModel: *workModel,
-		Level:     *level,
-		Region:    *region,
+		JobType:   jt,
+		WorkModel: wm,
+		Level:     lv,
+		Region:    rg,
 	})
 
 	fmt.Println()
@@ -171,6 +191,11 @@ func main() {
 	chatID := envOrFlag(*telegramChatID, "TELEGRAM_CHAT_ID")
 	if tkn != "" && chatID != "" {
 		writers = append(writers, output.NewTelegramWriter(tkn, chatID))
+	}
+
+	dwURL := envOrFlag(*discordWebhook, "DISCORD_WEBHOOK_URL")
+	if dwURL != "" {
+		writers = append(writers, output.NewDiscordWriter(dwURL))
 	}
 
 	for _, w := range writers {

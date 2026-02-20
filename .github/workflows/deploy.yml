@@ -1,0 +1,51 @@
+name: Job Search Cron
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # Diariamente às 12h UTC (9h BRT)
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Permite execução manual
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Build
+        run: go build ./cmd/go-work
+
+      - name: Vet
+        run: go vet ./...
+
+  run:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Run go-work
+        env:
+          SEARCH_QUERY: ${{ secrets.SEARCH_QUERY }}
+          SEARCH_LOCATION: ${{ secrets.SEARCH_LOCATION }}
+          SEARCH_TIPO: ${{ secrets.SEARCH_TIPO }}
+          SEARCH_MODELO: ${{ secrets.SEARCH_MODELO }}
+          SEARCH_NIVEL: ${{ secrets.SEARCH_NIVEL }}
+          SEARCH_REGIAO: ${{ secrets.SEARCH_REGIAO }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          PROXY_URL: ${{ secrets.PROXY_URL }}
+        run: go run ./cmd/go-work
