@@ -10,7 +10,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/rsilvagit/go-work/internal/cache"
 	"github.com/rsilvagit/go-work/internal/filter"
+	"github.com/rsilvagit/go-work/internal/httpclient"
 	"github.com/rsilvagit/go-work/internal/model"
 	"github.com/rsilvagit/go-work/internal/output"
 	"github.com/rsilvagit/go-work/internal/scraper"
@@ -60,6 +62,11 @@ func main() {
 	workModel := flag.String("modelo", "", "Modelo: remoto, hibrido, presencial")
 	level := flag.String("nivel", "", "Nível: junior, pleno, senior")
 	region := flag.String("regiao", "", "Região/cidade para filtrar (ex: \"São Paulo\")")
+	proxyURL := flag.String("proxy", "", "URL do proxy HTTP/HTTPS (ex: \"http://proxy:8080\")")
+	redisURL := flag.String("redis-url", "", "URL do Redis (ex: \"redis://localhost:6379\")")
+	cacheTTL := flag.Duration("cache-ttl", 1*time.Hour, "TTL do cache de resultados")
+	minDelay := flag.Duration("min-delay", 2*time.Second, "Delay mínimo entre requests ao mesmo domínio")
+	maxDelay := flag.Duration("max-delay", 5*time.Second, "Delay máximo entre requests ao mesmo domínio")
 	flag.Parse()
 
 	if *query == "" {
@@ -68,7 +75,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	scrapers := scraper.Registry()
+	// HTTP client com proteções anti-ban.
+	httpClient, err := httpclient.New(httpclient.Options{
+		ProxyURL: envOrFlag(*proxyURL, "PROXY_URL"),
+		MinDelay: *minDelay,
+		MaxDelay: *maxDelay,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Erro ao criar HTTP client: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Cache Redis (opcional).
+	var jobCache *cache.Cache
+	rURL := envOrFlag(*redisURL, "REDIS_URL")
+	if rURL != "" {
+		jobCache, err = cache.New(rURL, *cacheTTL)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Aviso: Redis indisponível, continuando sem cache: %v\n", err)
+		} else {
+			defer jobCache.Close()
+		}
+	}
+
+	scrapers := scraper.Registry(httpClient)
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
@@ -82,12 +112,32 @@ func main() {
 		wg.Add(1)
 		go func(s scraper.Scraper) {
 			defer wg.Done()
+
+			// Verificar cache primeiro.
+			if jobCache != nil {
+				if cached, ok := jobCache.Get(ctx, s.Name(), *query, *location); ok {
+					fmt.Printf("[cache hit] %s: %d vaga(s) do cache\n", s.Name(), len(cached))
+					mu.Lock()
+					allJobs = append(allJobs, cached...)
+					mu.Unlock()
+					return
+				}
+			}
+
 			fmt.Printf("Buscando em %s...\n", s.Name())
 			jobs, err := s.Search(ctx, *query, *location)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Aviso: %s falhou: %v\n", s.Name(), err)
 				return
 			}
+
+			// Salvar no cache.
+			if jobCache != nil && len(jobs) > 0 {
+				if err := jobCache.Set(ctx, s.Name(), *query, *location, jobs); err != nil {
+					fmt.Fprintf(os.Stderr, "Aviso: falha ao salvar cache para %s: %v\n", s.Name(), err)
+				}
+			}
+
 			mu.Lock()
 			allJobs = append(allJobs, jobs...)
 			mu.Unlock()

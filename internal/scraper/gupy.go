@@ -8,17 +8,18 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rsilvagit/go-work/internal/httpclient"
 	"github.com/rsilvagit/go-work/internal/model"
 )
 
 type Gupy struct {
-	client  *http.Client
+	client  *httpclient.Client
 	baseURL string
 }
 
-func NewGupy() *Gupy {
+func NewGupy(client *httpclient.Client) *Gupy {
 	return &Gupy{
-		client:  &http.Client{},
+		client:  client,
 		baseURL: "https://portal.gupy.io/job-search/term",
 	}
 }
@@ -34,8 +35,6 @@ func (g *Gupy) Search(ctx context.Context, query string, location string) ([]mod
 	if err != nil {
 		return nil, fmt.Errorf("gupy: building request: %w", err)
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)")
-
 	resp, err := g.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("gupy: executing request: %w", err)

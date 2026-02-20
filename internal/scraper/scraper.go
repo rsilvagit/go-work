@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 
+	"github.com/rsilvagit/go-work/internal/httpclient"
 	"github.com/rsilvagit/go-work/internal/model"
 )
 
@@ -15,11 +16,11 @@ type Scraper interface {
 	Search(ctx context.Context, query string, location string) ([]model.Job, error)
 }
 
-// Registry returns all available scrapers.
-func Registry() []Scraper {
+// Registry returns all available scrapers using the shared HTTP client.
+func Registry(client *httpclient.Client) []Scraper {
 	return []Scraper{
-		NewLinkedIn(),
-		NewIndeed(),
-		NewGupy(),
+		NewLinkedIn(client),
+		NewIndeed(client),
+		NewGupy(client),
 	}
 }

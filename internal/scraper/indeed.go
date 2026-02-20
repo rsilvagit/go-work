@@ -8,17 +8,18 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rsilvagit/go-work/internal/httpclient"
 	"github.com/rsilvagit/go-work/internal/model"
 )
 
 type Indeed struct {
-	client  *http.Client
+	client  *httpclient.Client
 	baseURL string
 }
 
-func NewIndeed() *Indeed {
+func NewIndeed(client *httpclient.Client) *Indeed {
 	return &Indeed{
-		client:  &http.Client{},
+		client:  client,
 		baseURL: "https://www.indeed.com/jobs",
 	}
 }
@@ -37,8 +38,6 @@ func (in *Indeed) Search(ctx context.Context, query string, location string) ([]
 	if err != nil {
 		return nil, fmt.Errorf("indeed: building request: %w", err)
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)")
-
 	resp, err := in.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("indeed: executing request: %w", err)

@@ -8,17 +8,18 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/rsilvagit/go-work/internal/httpclient"
 	"github.com/rsilvagit/go-work/internal/model"
 )
 
 type LinkedIn struct {
-	client  *http.Client
+	client  *httpclient.Client
 	baseURL string
 }
 
-func NewLinkedIn() *LinkedIn {
+func NewLinkedIn(client *httpclient.Client) *LinkedIn {
 	return &LinkedIn{
-		client:  &http.Client{},
+		client:  client,
 		baseURL: "https://www.linkedin.com/jobs/search",
 	}
 }
@@ -37,8 +38,6 @@ func (l *LinkedIn) Search(ctx context.Context, query string, location string) ([
 	if err != nil {
 		return nil, fmt.Errorf("linkedin: building request: %w", err)
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)")
-
 	resp, err := l.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("linkedin: executing request: %w", err)
