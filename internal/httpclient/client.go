@@ -125,7 +125,8 @@ func (c *Client) setHeaders(req *http.Request) {
 	req.Header.Set("User-Agent", ua)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	// Accept-Encoding é omitido intencionalmente: Go's http.Transport
+	// gerencia compressão automaticamente quando este header não é setado.
 	req.Header.Set("DNT", "1")
 	req.Header.Set("Sec-Fetch-Dest", "document")
 	req.Header.Set("Sec-Fetch-Mode", "navigate")
