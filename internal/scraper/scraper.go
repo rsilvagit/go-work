@@ -19,8 +19,6 @@ type Scraper interface {
 // Registry returns all available scrapers using the shared HTTP client.
 func Registry(client *httpclient.Client) []Scraper {
 	return []Scraper{
-		NewLinkedIn(client),
-		NewIndeed(client),
 		NewGupy(client),
 	}
 }
