@@ -12,8 +12,8 @@ Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem 
 - **Notificação Telegram** — Envio dos resultados diretamente para um chat/grupo no Telegram
 - **Notificação Discord** — Envio via Webhook com formatação Markdown e chunking automático (limite 2000 chars)
 - **Saída formatada** — Exibição em tabela no terminal
-- **Cron GitHub Actions** — Execução automática diária às 9h UTC (gratuito)
-- **CI/CD** — Build + vet automático em push/PR para `main`
+- **Cron GitHub Actions** — Execução automática diária às 12h UTC / 9h BRT (gratuito)
+- **Auto-run on push** — Executa automaticamente a cada push em `main`
 - **Extensível** — Adicione novos scrapers implementando a interface `Scraper`
 
 ## Tech Stack
@@ -180,8 +180,8 @@ O scraper consome a API JSON pública da Gupy, sem necessidade de parsear HTML. 
 
 O workflow em `.github/workflows/deploy.yml` faz tudo:
 
-- **Cron diário** — executa `go-work` automaticamente às 9h UTC (6h BRT)
-- **CI** — build + vet em todo push/PR para `main`
+- **Cron diário** — executa `go-work` automaticamente às 12h UTC (9h BRT)
+- **Push em `main`** — build + execução a cada push
 - **Manual** — pode ser disparado manualmente via `workflow_dispatch`
 
 ### Setup
