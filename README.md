@@ -7,7 +7,6 @@ Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem 
 - **API Gupy** — Consome a API JSON pública (`employability-portal.gupy.io`) — sem parsing de HTML, dados estruturados
 - **Multi-query** — Busca múltiplas stacks em paralelo (`golang,python,c#`)
 - **Proteção anti-ban** — User-Agent rotation, headers realistas, rate limiting com jitter, retry com exponential backoff e suporte a proxy
-- **Cache Redis** — Evita requests repetidos com TTL configurável (opcional)
 - **Filtragem avançada** — Por tipo de vaga, modelo de trabalho (`remoto,hibrido`), nível e região. Suporta múltiplos valores por vírgula
 - **Deduplicação** — Remove vagas duplicadas automaticamente
 - **Notificação Discord** — Envio via Webhook com formatação Markdown e chunking automático (limite 2000 chars)
@@ -56,9 +55,6 @@ go build -o go-work ./cmd/go-work
   -telegram-token "$TELEGRAM_TOKEN" \
   -telegram-chat-id "$TELEGRAM_CHAT_ID"
 
-# Com cache Redis
-./go-work -q "developer" -redis-url "redis://localhost:6379"
-
 # Com proxy
 ./go-work -q "developer" -proxy "http://proxy:8080"
 ```
@@ -73,8 +69,6 @@ go build -o go-work ./cmd/go-work
 | `-modelo` | Modelo de trabalho (`remoto`, `hibrido`, `presencial`) | — |
 | `-nivel` | Nível (`junior`, `pleno`, `senior`) | — |
 | `-regiao` | Filtro por região/cidade | — |
-| `-redis-url` | URL do Redis para cache | — |
-| `-cache-ttl` | TTL do cache | `1h` |
 | `-proxy` | URL do proxy HTTP/HTTPS | — |
 | `-min-delay` | Delay mínimo entre requests (anti-ban) | `2s` |
 | `-max-delay` | Delay máximo entre requests (anti-ban) | `5s` |
@@ -83,20 +77,6 @@ go build -o go-work ./cmd/go-work
 | `-discord-webhook` | URL do Webhook Discord | — |
 
 Flags e filtros suportam múltiplos valores separados por vírgula (ex: `-q "golang,python"`, `-modelo "remoto,hibrido"`).
-
-## Docker Compose
-
-```bash
-# Subir Redis + app
-docker-compose up
-
-# Só o Redis (para dev local)
-docker-compose up -d redis
-./go-work -q "golang" -redis-url "redis://localhost:6379"
-
-# Executar busca via compose
-docker-compose run --rm go-work -q "golang,python"
-```
 
 ## Variáveis de Ambiente
 
@@ -115,10 +95,6 @@ SEARCH_MODELO=remoto,hibrido
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 TELEGRAM_TOKEN=seu_token_aqui
 TELEGRAM_CHAT_ID=seu_chat_id_aqui
-
-# Infraestrutura (opcional)
-REDIS_URL=redis://localhost:6379
-PROXY_URL=
 ```
 
 Todas as flags da CLI possuem fallback para variáveis de ambiente, permitindo execução 100% via env vars (ideal para GitHub Actions cron).
@@ -130,13 +106,11 @@ go-work/
 ├── cmd/go-work/           # Entrypoint da aplicação
 ├── internal/
 │   ├── httpclient/        # HTTP client com proteções anti-ban
-│   ├── cache/             # Cache Redis (opcional)
 │   ├── model/             # Modelo de dados (Job)
 │   ├── scraper/           # Scraper Gupy (API JSON)
 │   ├── filter/            # Filtros de vagas
 │   └── output/            # Writers (Console, Telegram, Discord)
 ├── .github/workflows/     # Cron + CI (GitHub Actions)
-├── docker-compose.yml
 ├── Dockerfile
 ├── .env.example
 └── go.mod
@@ -145,15 +119,14 @@ go-work/
 ## Arquitetura
 
 ```
-┌─────────┐    ┌─────────────┐              ┌───────────┐    ┌─────────┐    ┌─────────┐
-│ CLI/Env  ├───►│ Cache Redis ├─miss────────►│ httpclient├───►│ Filtros ├───►│ Output  │
-└─────────┘    └──────┬──────┘              └─────┬─────┘    └─────────┘    └─────────┘
-                      │                           │                          ├─ Console
-                      │    ┌────────────────┐     │ UA Rotation              ├─ Discord
-                      └───►│ Gupy API (JSON)│     │ Rate Limit               └─ Telegram
-                           └────────────────┘     │ Retry/Backoff
-                                                  │ Proxy
-                                                  │ Headers
+┌─────────┐    ┌───────────┐    ┌────────────────┐    ┌─────────┐    ┌─────────┐
+│ CLI/Env  ├───►│ httpclient├───►│ Gupy API (JSON)├───►│ Filtros ├───►│ Output  │
+└─────────┘    └─────┬─────┘    └────────────────┘    └─────────┘    └─────────┘
+                     │                                                 ├─ Console
+                     │ UA Rotation                                     ├─ Discord
+                     │ Rate Limit                                      └─ Telegram
+                     │ Retry/Backoff
+                     │ Proxy
 ```
 
 Cada termo de busca gera uma goroutine separada. Os resultados são combinados, deduplicados e filtrados antes do envio.
