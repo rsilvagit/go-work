@@ -2,6 +2,8 @@
 
 Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem avançada, proteções anti-ban e notificações via Discord. Execução automatizada via GitHub Actions (cron diário gratuito).
 
+> **[Documentação Técnica Completa](https://rsilvagit.github.io/go-work/)** — Arquitetura, decisões técnicas, padrões de código, pipeline de dados e deploy.
+
 ## Funcionalidades
 
 - **API Gupy** — Consome a API JSON pública (`employability-portal.gupy.io`) — sem parsing de HTML, dados estruturados

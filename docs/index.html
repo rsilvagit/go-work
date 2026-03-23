@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>go-work | Documentação</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --bg-card: #161b22;
+      --bg-code: #1c2128;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --green: #3fb950;
+      --orange: #d29922;
+      --purple: #bc8cff;
+      --red: #f85149;
+      --cyan: #39d353;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── NAV ── */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      padding: 24px 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
+    .nav-logo h1 {
+      font-size: 1.25rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .nav-logo span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .nav a {
+      display: block;
+      padding: 8px 24px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+
+    .nav a:hover, .nav a.active {
+      color: var(--text);
+      background: rgba(88, 166, 255, 0.05);
+      border-left-color: var(--accent);
+    }
+
+    .nav .nav-section {
+      padding: 16px 24px 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: 260px;
+      max-width: 900px;
+      padding: 48px 48px 120px;
+    }
+
+    section {
+      margin-bottom: 64px;
+      scroll-margin-top: 32px;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      margin: 32px 0 12px;
+      color: var(--accent);
+    }
+
+    h4 {
+      font-size: 1rem;
+      margin: 20px 0 8px;
+      color: var(--purple);
+    }
+
+    p { margin-bottom: 16px; color: var(--text-muted); }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+    strong { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 64px 0 48px;
+      margin-bottom: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    .hero-badges {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+    }
+
+    .badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .badge .dot.go { background: #00ADD8; }
+    .badge .dot.redis { background: #DC382D; }
+    .badge .dot.docker { background: #2496ED; }
+    .badge .dot.actions { background: var(--green); }
+
+    /* ── CARDS ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: var(--accent); }
+
+    .card-icon {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .card p {
+      font-size: 0.85rem;
+      margin: 0;
+    }
+
+    /* ── TABLES ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: var(--bg-card);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td { color: var(--text-muted); }
+
+    /* ── CODE ── */
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      color: var(--text);
+    }
+
+    p code, li code, td code {
+      background: var(--bg-code);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--accent);
+    }
+
+    .keyword { color: var(--red); }
+    .type { color: var(--orange); }
+    .string { color: var(--green); }
+    .comment { color: var(--text-muted); font-style: italic; }
+    .func { color: var(--purple); }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 24px 0;
+      justify-content: center;
+    }
+
+    .flow-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .flow-step .step-num {
+      font-size: 0.7rem;
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .flow-step .step-title {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    .flow-step .step-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .flow-arrow {
+      color: var(--text-muted);
+      font-size: 1.2rem;
+    }
+
+    /* ── ADR ── */
+    .adr {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 20px 0;
+      border-left: 3px solid var(--accent);
+    }
+
+    .adr-title {
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .adr p { margin-bottom: 8px; }
+
+    .adr-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--accent);
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+
+    /* ── LAYER DIAGRAM ── */
+    .layers {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 24px 0;
+    }
+
+    .layer {
+      padding: 14px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .layer span:last-child {
+      font-weight: 400;
+      font-size: 0.8rem;
+      opacity: 0.7;
+    }
+
+    .layer-1 { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); color: var(--accent); }
+    .layer-2 { background: rgba(188,140,255,0.1); border: 1px solid rgba(188,140,255,0.3); color: var(--purple); }
+    .layer-3 { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); color: var(--green); }
+    .layer-4 { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); color: var(--orange); }
+    .layer-5 { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: var(--red); }
+
+    /* ── ANTI-BAN STACK ── */
+    .stack-list {
+      list-style: none;
+      margin: 16px 0;
+    }
+
+    .stack-list li {
+      padding: 12px 16px;
+      border-left: 3px solid var(--border);
+      margin-bottom: 8px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+
+    .stack-list li:hover { border-left-color: var(--accent); }
+    .stack-list li strong { color: var(--text); }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── FOOTER ── */
+    footer {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .nav { display: none; }
+      .main { margin-left: 0; padding: 24px 20px 80px; }
+      .hero h1 { font-size: 2rem; }
+      .card-grid { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR NAV ── -->
+<nav class="nav" id="nav">
+  <div class="nav-logo">
+    <h1>go-work</h1>
+    <span>Documentacao Tecnica</span>
+  </div>
+  <div class="nav-section">Projeto</div>
+  <a href="#visao-geral">Visao Geral</a>
+  <a href="#funcionalidades">Funcionalidades</a>
+  <div class="nav-section">Arquitetura</div>
+  <a href="#arquitetura">Design e Estrutura</a>
+  <a href="#pipeline">Pipeline de Dados</a>
+  <a href="#anti-ban">Sistema Anti-Ban</a>
+  <div class="nav-section">Decisoes</div>
+  <a href="#adrs">Decisoes Tecnicas</a>
+  <a href="#padroes">Padroes de Codigo</a>
+  <div class="nav-section">Infra</div>
+  <a href="#deploy">Deploy e CI/CD</a>
+  <a href="#docker">Docker</a>
+  <div class="nav-section">Reflexao</div>
+  <a href="#licoes">Licoes Aprendidas</a>
+  <a href="#evolucao">Evolucao Futura</a>
+</nav>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>go-work</h1>
+    <p>Agregador inteligente de vagas de emprego com filtragem avancada, protecoes anti-ban e notificacoes automaticas. Zero custo de operacao.</p>
+    <div class="hero-badges">
+      <span class="badge"><span class="dot go"></span>Go 1.25</span>
+      <span class="badge"><span class="dot redis"></span>Redis</span>
+      <span class="badge"><span class="dot docker"></span>Docker</span>
+      <span class="badge"><span class="dot actions"></span>GitHub Actions</span>
+    </div>
+  </div>
+
+  <!-- VISAO GERAL -->
+  <section id="visao-geral">
+    <h2>Visao Geral</h2>
+    <h3>Problema</h3>
+    <p>Acompanhar vagas em plataformas como Gupy exige acesso manual diario, buscas repetitivas e triagem de resultados irrelevantes. Nao existe uma forma nativa de receber apenas vagas novas, filtradas por stack, modelo de trabalho ou nivel de senioridade, direto no canal de comunicacao que voce ja usa.</p>
+
+    <h3>Solucao</h3>
+    <p>Uma CLI em Go que busca vagas na API da Gupy, aplica filtros inteligentes e envia notificacoes automaticas via Discord e Telegram. Execucao 100% serverless via GitHub Actions com cron diario gratuito.</p>
+
+    <table>
+      <tr><th>Metrica</th><th>Valor</th></tr>
+      <tr><td>Linguagem</td><td>Go 1.25</td></tr>
+      <tr><td>Linhas de codigo</td><td>~600</td></tr>
+      <tr><td>Pacotes internos</td><td>6</td></tr>
+      <tr><td>Dependencias externas</td><td>2</td></tr>
+      <tr><td>Canais de saida</td><td>3 (Console, Discord, Telegram)</td></tr>
+      <tr><td>Custo de operacao</td><td>R$ 0</td></tr>
+    </table>
+  </section>
+
+  <!-- FUNCIONALIDADES -->
+  <section id="funcionalidades">
+    <h2>Funcionalidades</h2>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">&#128269;</div>
+        <h4>API Gupy</h4>
+        <p>Consome API JSON publica com dados estruturados. Sem parsing fragil de HTML.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#9889;</div>
+        <h4>Multi-Query Paralelo</h4>
+        <p>Busca multiplas stacks simultaneamente com goroutines (<code>golang,python,c#</code>).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128737;</div>
+        <h4>Anti-Ban</h4>
+        <p>UA rotation, rate limiting com jitter, retry com backoff exponencial e proxy.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128336;</div>
+        <h4>Apenas Vagas Novas</h4>
+        <p>Filtra automaticamente vagas das ultimas 24h, eliminando duplicatas entre execucoes.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#127919;</div>
+        <h4>Filtros Avancados</h4>
+        <p>Tipo, modelo de trabalho, nivel, regiao. Multiplos valores por virgula (OR logico).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128276;</div>
+        <h4>Notificacoes</h4>
+        <p>Discord Webhook e Telegram Bot API com chunking automatico.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#9203;</div>
+        <h4>Cron Serverless</h4>
+        <p>GitHub Actions executa diariamente as 9h BRT. Zero infra para manter.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">&#128640;</div>
+        <h4>Cache Redis</h4>
+        <p>Opcional com graceful degradation. Reduz chamadas a API durante dev.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARQUITETURA -->
+  <section id="arquitetura">
+    <h2>Arquitetura e Design</h2>
+
+    <h3>Estrutura de Pacotes</h3>
+    <div class="layers">
+      <div class="layer layer-1">cmd/go-work/ <span>Composition Root &mdash; orquestracao e wiring</span></div>
+      <div class="layer layer-2">internal/scraper/ <span>Strategy Pattern &mdash; fontes de dados (Gupy, extensivel)</span></div>
+      <div class="layer layer-3">internal/filter/ <span>Engine de filtragem &mdash; MaxAge, tipo, modelo, nivel, regiao</span></div>
+      <div class="layer layer-4">internal/output/ <span>Strategy Pattern &mdash; Console, Discord, Telegram</span></div>
+      <div class="layer layer-5">internal/model/ <span>Dominio &mdash; Job (value object, zero dependencias)</span></div>
+    </div>
+    <p>Pacotes auxiliares: <code>internal/cache/</code> (Redis) e <code>internal/httpclient/</code> (HTTP resiliente). O grafo de dependencias e um <strong>DAG aciclico</strong> &mdash; nao ha imports circulares. Todo o codigo esta em <code>internal/</code> para encapsulamento.</p>
+
+    <h3>Modelo de Dominio</h3>
+<pre><code><span class="keyword">type</span> <span class="type">Job</span> <span class="keyword">struct</span> {
+    Title       <span class="type">string</span>
+    Company     <span class="type">string</span>
+    Location    <span class="type">string</span>
+    URL         <span class="type">string</span>
+    Description <span class="type">string</span>
+    Source      <span class="type">string</span>
+    PostedAt    <span class="type">time.Time</span>
+    JobType     <span class="type">string</span>    <span class="comment">// full-time, part-time, estagio, freelance</span>
+    WorkModel   <span class="type">string</span>    <span class="comment">// remoto, hibrido, presencial</span>
+    Level       <span class="type">string</span>    <span class="comment">// junior, pleno, senior</span>
+    Salary      <span class="type">string</span>
+}</code></pre>
+    <p><code>Job</code> e um <strong>value object</strong> &mdash; imutavel, sem ponteiros, sem estado compartilhado. Pode ser copiado e passado entre goroutines sem locks. Metodos: <code>FullText()</code> para busca e <code>Key()</code> para deduplicacao.</p>
+
+    <h3>Concorrencia</h3>
+<pre><code><span class="comment">// Cada combinacao scraper x termo roda em goroutine dedicada</span>
+<span class="keyword">for</span> _, s := <span class="keyword">range</span> scrapers {
+    <span class="keyword">for</span> _, term := <span class="keyword">range</span> queries {
+        wg.<span class="func">Add</span>(1)
+        <span class="keyword">go</span> <span class="keyword">func</span>(s scraper.Scraper, term <span class="type">string</span>) {
+            <span class="keyword">defer</span> wg.<span class="func">Done</span>()
+            jobs, _ := s.<span class="func">Search</span>(ctx, term, loc)
+            mu.<span class="func">Lock</span>()
+            allJobs = <span class="func">append</span>(allJobs, jobs...)
+            mu.<span class="func">Unlock</span>()
+        }(s, term)
+    }
+}
+wg.<span class="func">Wait</span>()</code></pre>
+    <p><code>sync.WaitGroup</code> controla o ciclo de vida. <code>sync.Mutex</code> protege o slice compartilhado. Deduplicacao e filtragem acontecem apos o <code>Wait()</code>, em single-threaded.</p>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="pipeline">
+    <h2>Pipeline de Dados</h2>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">Etapa 1</div>
+        <div class="step-title">Input</div>
+        <div class="step-desc">CLI / Env / .env</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Etapa 2</div>
+        <div class="step-title">Fetch</div>
+        <div class="step-desc">API Gupy + Cache</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Etapa 3</div>
+        <div class="step-title">Dedup</div>
+        <div class="step-desc">Por URL ou chave</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Etapa 4</div>
+        <div class="step-title">Filter</div>
+        <div class="step-desc">24h, tipo, modelo...</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Etapa 5</div>
+        <div class="step-title">Output</div>
+        <div class="step-desc">Console / Discord / Telegram</div>
+      </div>
+    </div>
+
+    <h3>Fluxo de Fetch (por goroutine)</h3>
+    <ul class="stack-list">
+      <li><strong>1. Cache check</strong> &mdash; Se Redis disponivel e cache hit, retorna imediatamente</li>
+      <li><strong>2. Rate limit</strong> &mdash; Delay aleatorio 2-5s com jitter antes do request</li>
+      <li><strong>3. HTTP GET</strong> &mdash; Request com headers anti-ban e UA rotacionado</li>
+      <li><strong>4. Retry</strong> &mdash; Em caso de 429/503, backoff exponencial (2s, 4s, 8s)</li>
+      <li><strong>5. Parse</strong> &mdash; JSON da Gupy mapeado para <code>[]model.Job</code></li>
+      <li><strong>6. Filtro local</strong> &mdash; Localizacao filtrada no scraper se informada</li>
+      <li><strong>7. Cache set</strong> &mdash; Resultado salvo no Redis com TTL configuravel</li>
+      <li><strong>8. Merge</strong> &mdash; Append no slice compartilhado (protegido por Mutex)</li>
+    </ul>
+
+    <h3>Output Writers</h3>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="console">Console</button>
+      <button class="tab" data-tab="discord">Discord</button>
+      <button class="tab" data-tab="telegram">Telegram</button>
+    </div>
+
+    <div class="tab-content active" id="tab-console">
+<pre><code>FONTE   TITULO                        EMPRESA      LOCALIZACAO         URL
+-----   ------                        -------      -----------         ---
+gupy    Dev Golang Senior             Empresa X    Sao Paulo, SP       https://...
+gupy    Backend Developer             Empresa Y    Remoto              https://...</code></pre>
+      <p>Tabela formatada com <code>text/tabwriter</code>. Sempre ativo como saida padrao.</p>
+    </div>
+
+    <div class="tab-content" id="tab-discord">
+<pre><code><strong>Encontradas 5 vaga(s):</strong>
+
+<strong>1. Desenvolvedor Golang Senior</strong>
+> Empresa: Empresa XYZ
+> Local: Sao Paulo, SP, Brasil
+> Modelo: remoto
+> Tipo: full-time
+> <a>Ver vaga</a></code></pre>
+      <p>Markdown do Discord com chunking automatico a cada ~1900 chars (limite: 2000).</p>
+    </div>
+
+    <div class="tab-content" id="tab-telegram">
+<pre><code>*Encontradas 5 vaga\(s\):*
+
+*1\. Desenvolvedor Golang Senior*
+Empresa: Empresa XYZ
+Local: Sao Paulo, SP, Brasil
+Fonte: gupy
+<a>Ver vaga</a></code></pre>
+      <p>MarkdownV2 com escape de 18 caracteres especiais. Chunking a cada ~3800 chars (limite: 4096).</p>
+    </div>
+  </section>
+
+  <!-- ANTI-BAN -->
+  <section id="anti-ban">
+    <h2>Sistema Anti-Ban</h2>
+    <p>O <code>httpclient.Client</code> implementa 5 camadas de protecao para evitar bloqueios:</p>
+
+    <table>
+      <tr><th>Camada</th><th>Implementacao</th><th>Objetivo</th></tr>
+      <tr><td><strong>User-Agent Rotation</strong></td><td>13 UAs reais (Chrome, Firefox, Edge, Safari)</td><td>Evitar fingerprinting</td></tr>
+      <tr><td><strong>Headers Realistas</strong></td><td>Accept, Accept-Language, Sec-Fetch-*, DNT</td><td>Simular navegador real</td></tr>
+      <tr><td><strong>Rate Limiting</strong></td><td>Delay aleatorio 2-5s entre requests</td><td>Nao sobrecarregar o servidor</td></tr>
+      <tr><td><strong>Retry + Backoff</strong></td><td>2s, 4s, 8s em 429/503 (max 3x)</td><td>Respeitar rate limits</td></tr>
+      <tr><td><strong>TLS 1.2+</strong></td><td><code>tls.Config{MinVersion: tls.VersionTLS12}</code></td><td>Conexao segura</td></tr>
+    </table>
+
+    <p>O <strong>jitter</strong> (delay aleatorio) e crucial &mdash; requests com intervalos exatos sao facilmente identificaveis como bots. A combinacao de delay variavel + UA rotation + headers realistas torna o trafego indistinguivel de um navegador real.</p>
+  </section>
+
+  <!-- ADRs -->
+  <section id="adrs">
+    <h2>Decisoes Tecnicas (ADRs)</h2>
+
+    <div class="adr">
+      <div class="adr-title">ADR-01: Go como linguagem principal</div>
+      <div class="adr-label">Contexto</div>
+      <p>Precisava de concorrencia nativa, binarios estaticos e simplicidade de deploy em CI.</p>
+      <div class="adr-label">Decisao</div>
+      <p>Go 1.25 &mdash; goroutines para paralelismo, binario estatico sem runtime, stdlib robusta.</p>
+      <div class="adr-label">Alternativas descartadas</div>
+      <p>Python (GIL), Node.js (deps pesadas), Rust (complexidade desproporcional).</p>
+    </div>
+
+    <div class="adr">
+      <div class="adr-title">ADR-02: API JSON ao inves de scraping HTML</div>
+      <div class="adr-label">Contexto</div>
+      <p>A Gupy expoe dados via paginas HTML e API JSON publica.</p>
+      <div class="adr-label">Decisao</div>
+      <p>Consumir a API JSON &mdash; dados estruturados, menor trafego, menos fragil que parsing HTML.</p>
+      <div class="adr-label">Trade-off</div>
+      <p>API nao documentada oficialmente &mdash; pode mudar sem aviso.</p>
+    </div>
+
+    <div class="adr">
+      <div class="adr-title">ADR-03: Cache Redis com graceful degradation</div>
+      <div class="adr-label">Contexto</div>
+      <p>Multiplas execucoes geravam chamadas repetidas. No CI, Redis nao esta disponivel.</p>
+      <div class="adr-label">Decisao</div>
+      <p>Redis opcional &mdash; se indisponivel, a aplicacao continua normalmente sem cache.</p>
+      <div class="adr-label">Beneficio</div>
+      <p>Funciona em qualquer ambiente. Zero dependencias obrigatorias alem do Go.</p>
+    </div>
+
+    <div class="adr">
+      <div class="adr-title">ADR-04: Filtro de 24h para evitar duplicatas</div>
+      <div class="adr-label">Contexto</div>
+      <p>Cron diario enviava as mesmas vagas repetidamente.</p>
+      <div class="adr-label">Decisao</div>
+      <p>Filtrar por <code>PostedAt</code> nas ultimas 24h &mdash; zero estado externo, zero complexidade.</p>
+      <div class="adr-label">Alternativas avaliadas</div>
+      <p>Redis set persistente, arquivo local, SQLite, Bloom Filter &mdash; todas requerem estado externo desnecessario.</p>
+    </div>
+  </section>
+
+  <!-- PADROES -->
+  <section id="padroes">
+    <h2>Padroes de Codigo</h2>
+
+    <h3>Strategy Pattern &mdash; Scrapers e Writers</h3>
+<pre><code><span class="comment">// Contrato para fontes de dados</span>
+<span class="keyword">type</span> <span class="type">Scraper</span> <span class="keyword">interface</span> {
+    <span class="func">Name</span>() <span class="type">string</span>
+    <span class="func">Search</span>(ctx <span class="type">context.Context</span>, query, location <span class="type">string</span>) ([]<span class="type">model.Job</span>, <span class="type">error</span>)
+}
+
+<span class="comment">// Contrato para canais de saida</span>
+<span class="keyword">type</span> <span class="type">ResultWriter</span> <span class="keyword">interface</span> {
+    <span class="func">WriteJobs</span>(jobs []<span class="type">model.Job</span>) <span class="type">error</span>
+}</code></pre>
+    <p>Adicionar uma nova fonte (LinkedIn) ou novo canal (Slack) requer apenas uma nova struct implementando a interface. Zero alteracao no core.</p>
+
+    <h3>Options Pattern &mdash; Defaults Sensiveis</h3>
+<pre><code><span class="keyword">type</span> <span class="type">Options</span> <span class="keyword">struct</span> {
+    MaxAge    <span class="type">time.Duration</span>  <span class="comment">// default: 24h</span>
+    MinDelay  <span class="type">time.Duration</span>  <span class="comment">// default: 2s</span>
+    MaxDelay  <span class="type">time.Duration</span>  <span class="comment">// default: 5s</span>
+}
+<span class="comment">// Zero value = usa o default. Nenhuma config obrigatoria.</span></code></pre>
+
+    <h3>Composition Root</h3>
+    <p>O <code>main.go</code> e o unico lugar que conhece todos os pacotes. Funciona como <strong>composition root</strong>: parseia config, cria dependencias, orquestra execucao. Nenhum pacote interno cria suas proprias dependencias &mdash; tudo e injetado.</p>
+
+    <h3>Flag + Env Var Fallback</h3>
+<pre><code><span class="keyword">func</span> <span class="func">envOrFlag</span>(flagVal, envKey <span class="type">string</span>) <span class="type">string</span> {
+    <span class="keyword">if</span> flagVal != <span class="string">""</span> { <span class="keyword">return</span> flagVal }
+    <span class="keyword">return</span> os.<span class="func">Getenv</span>(envKey)
+}
+<span class="comment">// Flag CLI > Env var > Default</span></code></pre>
+  </section>
+
+  <!-- DEPLOY -->
+  <section id="deploy">
+    <h2>Deploy e CI/CD</h2>
+
+    <h3>GitHub Actions Workflow</h3>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">Trigger</div>
+        <div class="step-title">Cron / Push / Manual</div>
+        <div class="step-desc">Diario 9h BRT</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Job 1</div>
+        <div class="step-title">Build</div>
+        <div class="step-desc">go build + go vet</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Job 2</div>
+        <div class="step-title">Run</div>
+        <div class="step-desc">go run + Secrets</div>
+      </div>
+      <div class="flow-arrow">&#10132;</div>
+      <div class="flow-step">
+        <div class="step-num">Output</div>
+        <div class="step-title">Notificacao</div>
+        <div class="step-desc">Discord / Telegram</div>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Trigger</th><th>Quando</th><th>Uso</th></tr>
+      <tr><td><code>schedule</code></td><td>Diario as 12h UTC (9h BRT)</td><td>Busca automatizada</td></tr>
+      <tr><td><code>push</code></td><td>Push em <code>main</code></td><td>Validacao pos-deploy</td></tr>
+      <tr><td><code>workflow_dispatch</code></td><td>Manual</td><td>Testes sob demanda</td></tr>
+    </table>
+
+    <h3>Gestao de Secrets</h3>
+    <p>Todos os dados sensiveis ficam em <strong>GitHub Repository Secrets</strong>. A aplicacao resolve via <code>os.Getenv()</code> &mdash; zero hardcoding. Secrets disponiveis:</p>
+    <table>
+      <tr><th>Secret</th><th>Descricao</th></tr>
+      <tr><td><code>SEARCH_QUERY</code></td><td>Termos de busca (obrigatorio)</td></tr>
+      <tr><td><code>SEARCH_MODELO</code></td><td>Modelo de trabalho</td></tr>
+      <tr><td><code>DISCORD_WEBHOOK_URL</code></td><td>Webhook do Discord</td></tr>
+      <tr><td><code>TELEGRAM_TOKEN</code></td><td>Token do Bot Telegram</td></tr>
+      <tr><td><code>TELEGRAM_CHAT_ID</code></td><td>Chat ID do Telegram</td></tr>
+    </table>
+  </section>
+
+  <!-- DOCKER -->
+  <section id="docker">
+    <h2>Docker</h2>
+
+    <h3>Multi-Stage Build</h3>
+<pre><code><span class="comment"># Stage 1: Build (imagem Go ~800MB)</span>
+<span class="keyword">FROM</span> golang:1.25-alpine <span class="keyword">AS</span> builder
+<span class="keyword">RUN</span> CGO_ENABLED=0 go build -ldflags=<span class="string">"-s -w"</span> -o /go-work ./cmd/go-work
+
+<span class="comment"># Stage 2: Runtime (imagem final ~13MB)</span>
+<span class="keyword">FROM</span> alpine:3.21
+<span class="keyword">COPY</span> --from=builder /go-work /usr/local/bin/go-work</code></pre>
+
+    <table>
+      <tr><th>Flag</th><th>Efeito</th></tr>
+      <tr><td><code>CGO_ENABLED=0</code></td><td>Binario 100% estatico</td></tr>
+      <tr><td><code>-ldflags="-s -w"</code></td><td>Remove simbolos e debug &rarr; ~40% menor</td></tr>
+      <tr><td><code>alpine:3.21</code></td><td>Imagem base de ~5MB</td></tr>
+    </table>
+
+    <h3>Docker Compose</h3>
+<pre><code><span class="keyword">services:</span>
+  <span class="type">redis:</span>
+    image: redis:7-alpine
+    ports: [<span class="string">"6379:6379"</span>]
+
+  <span class="type">go-work:</span>
+    build: .
+    env_file: .env
+    depends_on: [redis]
+    environment:
+      - REDIS_URL=redis://redis:6379</code></pre>
+  </section>
+
+  <!-- LICOES -->
+  <section id="licoes">
+    <h2>Licoes Aprendidas</h2>
+
+    <h3>Competencias Demonstradas</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Clean Architecture</h4>
+        <p>Separacao em camadas com dependencias unidirecionais e DAG aciclico.</p>
+      </div>
+      <div class="card">
+        <h4>SOLID</h4>
+        <p>Single Responsibility, Interface Segregation, Dependency Inversion aplicados em Go.</p>
+      </div>
+      <div class="card">
+        <h4>Go Idiomatico</h4>
+        <p>Interfaces implicitas, error wrapping, context propagation, zero value util.</p>
+      </div>
+      <div class="card">
+        <h4>DevOps</h4>
+        <p>CI/CD com GitHub Actions, Docker multi-stage, secret management, IaC.</p>
+      </div>
+    </div>
+
+    <h3>Desafios Resolvidos</h3>
+    <ul class="stack-list">
+      <li><strong>Rate Limiting da API</strong> &mdash; Resolvido com rate limit + jitter + backoff exponencial + UA rotation. O jitter e a chave.</li>
+      <li><strong>Vagas duplicadas entre execucoes</strong> &mdash; Avaliadas 5 abordagens. Filtro por data (24h) foi a mais simples e eficaz.</li>
+      <li><strong>Limites de mensagem</strong> &mdash; Chunking automatico com margem de seguranca para Discord (2000) e Telegram (4096).</li>
+      <li><strong>MarkdownV2 do Telegram</strong> &mdash; Funcao <code>escapeMarkdown()</code> tratando 18 caracteres especiais.</li>
+    </ul>
+  </section>
+
+  <!-- EVOLUCAO -->
+  <section id="evolucao">
+    <h2>Evolucao Futura</h2>
+
+    <table>
+      <tr><th>Prazo</th><th>Feature</th><th>Descricao</th></tr>
+      <tr><td>Curto</td><td>Mais scrapers</td><td>LinkedIn Jobs, Indeed</td></tr>
+      <tr><td>Curto</td><td>Paginacao completa</td><td>Buscar todas as paginas da API (hoje: 20 resultados)</td></tr>
+      <tr><td>Curto</td><td>Testes unitarios</td><td>Cobertura para cada pacote interno</td></tr>
+      <tr><td>Medio</td><td>Slack / Email</td><td>Novos canais de notificacao</td></tr>
+      <tr><td>Medio</td><td>Metricas</td><td>Contagem de vagas por dia/stack para analise de mercado</td></tr>
+      <tr><td>Longo</td><td>Dashboard Web</td><td>Historico de vagas e tendencias</td></tr>
+      <tr><td>Longo</td><td>NLP</td><td>Classificacao automatica de nivel a partir da descricao</td></tr>
+    </table>
+
+    <h3>O Que Eu Faria Diferente</h3>
+    <ul class="stack-list">
+      <li><strong>Testes desde o inicio</strong> &mdash; A arquitetura com interfaces facilita mocks, mas testes nao foram priorizados na primeira iteracao.</li>
+      <li><strong>Paginacao completa</strong> &mdash; Limitar a 20 resultados e uma simplificacao que pode perder vagas relevantes.</li>
+      <li><strong>Structured logging</strong> &mdash; Os <code>fmt.Printf</code> funcionam, mas <code>slog</code> facilitaria debugging em producao.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>go-work &mdash; Desenvolvido por <a href="https://github.com/rsilvagit">rsilvagit</a> | <a href="https://github.com/rsilvagit/go-work">Repositorio</a></p>
+  </footer>
+</div>
+
+<script>
+  // ── Tab switching ──
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const group = tab.parentElement;
+      const container = group.parentElement;
+
+      group.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const target = container.querySelector('#tab-' + tab.dataset.tab);
+      if (target) target.classList.add('active');
+    });
+  });
+
+  // ── Active nav link on scroll ──
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav a[href^="#"]');
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(section => observer.observe(section));
+
+  // ── Smooth scroll ──
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+
+</body>
+</html>
