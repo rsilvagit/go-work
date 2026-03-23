@@ -8,7 +8,8 @@ Agregador de vagas de emprego que consome a API pública da Gupy, com filtragem 
 - **Multi-query** — Busca múltiplas stacks em paralelo (`golang,python,c#`)
 - **Proteção anti-ban** — User-Agent rotation, headers realistas, rate limiting com jitter, retry com exponential backoff e suporte a proxy
 - **Filtragem avançada** — Por tipo de vaga, modelo de trabalho (`remoto,hibrido`), nível e região. Suporta múltiplos valores por vírgula
-- **Deduplicação** — Remove vagas duplicadas automaticamente
+- **Apenas vagas novas** — Filtra automaticamente vagas postadas nas últimas 24h (configurável), eliminando duplicatas entre execuções
+- **Deduplicação** — Remove vagas duplicadas dentro da mesma execução
 - **Notificação Discord** — Envio via Webhook com formatação Markdown e chunking automático (limite 2000 chars)
 - **Notificação Telegram** — Envio dos resultados diretamente para um chat/grupo
 - **Saída formatada** — Exibição em tabela no terminal
@@ -69,6 +70,9 @@ go build -o go-work ./cmd/go-work
 | `-modelo` | Modelo de trabalho (`remoto`, `hibrido`, `presencial`) | — |
 | `-nivel` | Nível (`junior`, `pleno`, `senior`) | — |
 | `-regiao` | Filtro por região/cidade | — |
+| `-l` | Localização para filtrar na API (ex: `São Paulo`) | — |
+| `-redis-url` | URL do Redis para cache (ex: `redis://localhost:6379`) | — |
+| `-cache-ttl` | TTL do cache de resultados | `1h` |
 | `-proxy` | URL do proxy HTTP/HTTPS | — |
 | `-min-delay` | Delay mínimo entre requests (anti-ban) | `2s` |
 | `-max-delay` | Delay máximo entre requests (anti-ban) | `5s` |
@@ -89,12 +93,20 @@ cp .env.example .env
 ```env
 # Busca
 SEARCH_QUERY=golang,python,c#
+SEARCH_LOCATION=São Paulo
 SEARCH_MODELO=remoto,hibrido
+SEARCH_TIPO=full-time
+SEARCH_NIVEL=senior
+SEARCH_REGIAO=São Paulo
 
 # Notificações
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxx/yyy
 TELEGRAM_TOKEN=seu_token_aqui
 TELEGRAM_CHAT_ID=seu_chat_id_aqui
+
+# Cache e Proxy (opcional)
+REDIS_URL=redis://localhost:6379
+PROXY_URL=http://proxy:8080
 ```
 
 Todas as flags da CLI possuem fallback para variáveis de ambiente, permitindo execução 100% via env vars (ideal para GitHub Actions cron).
@@ -105,12 +117,14 @@ Todas as flags da CLI possuem fallback para variáveis de ambiente, permitindo e
 go-work/
 ├── cmd/go-work/           # Entrypoint da aplicação
 ├── internal/
+│   ├── cache/             # Cache Redis (opcional)
 │   ├── httpclient/        # HTTP client com proteções anti-ban
 │   ├── model/             # Modelo de dados (Job)
 │   ├── scraper/           # Scraper Gupy (API JSON)
-│   ├── filter/            # Filtros de vagas
+│   ├── filter/            # Filtros de vagas (inclui filtro de 24h)
 │   └── output/            # Writers (Console, Telegram, Discord)
 ├── .github/workflows/     # Cron + CI (GitHub Actions)
+├── docker-compose.yml     # Redis para desenvolvimento local
 ├── Dockerfile
 ├── .env.example
 └── go.mod
@@ -119,17 +133,18 @@ go-work/
 ## Arquitetura
 
 ```
-┌─────────┐    ┌───────────┐    ┌────────────────┐    ┌─────────┐    ┌─────────┐
-│ CLI/Env  ├───►│ httpclient├───►│ Gupy API (JSON)├───►│ Filtros ├───►│ Output  │
-└─────────┘    └─────┬─────┘    └────────────────┘    └─────────┘    └─────────┘
-                     │                                                 ├─ Console
-                     │ UA Rotation                                     ├─ Discord
-                     │ Rate Limit                                      └─ Telegram
-                     │ Retry/Backoff
-                     │ Proxy
+┌─────────┐    ┌───────────┐    ┌────────────────┐    ┌──────────┐    ┌─────────┐    ┌─────────┐
+│ CLI/Env  ├───►│ httpclient├───►│ Gupy API (JSON)├───►│ Dedup    ├───►│ Filtros ├───►│ Output  │
+└─────────┘    └─────┬─────┘    └───────┬────────┘    └──────────┘    └────┬────┘    └─────────┘
+                     │                  │                                  │           ├─ Console
+                     │ UA Rotation      │ Cache Redis                      │ MaxAge    ├─ Discord
+                     │ Rate Limit       │ (opcional)                       │ Tipo      └─ Telegram
+                     │ Retry/Backoff                                       │ Modelo
+                     │ Proxy                                               │ Nível
+                                                                           │ Região
 ```
 
-Cada termo de busca gera uma goroutine separada. Os resultados são combinados, deduplicados e filtrados antes do envio.
+Cada termo de busca gera uma goroutine separada. Os resultados são combinados, deduplicados por URL (ou título+empresa), filtrados por idade (últimas 24h) e critérios do usuário, e então enviados para os canais configurados.
 
 ## Proteções Anti-Ban
 
@@ -141,6 +156,36 @@ Cada termo de busca gera uma goroutine separada. Os resultados são combinados, 
 | **Retry + Backoff** | Em caso de 429/503, aguarda 2s → 4s → 8s (max 3 tentativas) |
 | **Proxy** | Suporte a proxy HTTP/HTTPS para rotação de IP |
 | **Cache Redis** | Reduz volume de requests com TTL configurável |
+
+## Filtro de Vagas Recentes
+
+Por padrão, apenas vagas publicadas nas **últimas 24 horas** são retornadas. Isso evita notificações duplicadas entre execuções diárias — cada dia traz somente vagas novas.
+
+O filtro usa o campo `publishedDate` da API da Gupy. Vagas sem data de publicação passam normalmente.
+
+> Para ajustar o período, altere o valor de `MaxAge` no `filter.Options` ao chamar `filter.Apply()`.
+
+## Cache Redis (Opcional)
+
+O cache Redis reduz chamadas repetidas à API durante a mesma janela de tempo:
+
+```bash
+# Com Redis local
+./go-work -q "golang" -redis-url "redis://localhost:6379"
+
+# TTL customizado
+./go-work -q "golang" -redis-url "redis://localhost:6379" -cache-ttl 2h
+```
+
+- **Chave:** `gowork:{scraper}:{sha256(scraper:query:location)}`
+- **TTL padrão:** 1 hora
+- **Fallback:** se o Redis estiver indisponível, a aplicação continua normalmente sem cache
+
+Para desenvolvimento local com Docker:
+
+```bash
+docker-compose up -d   # sobe o Redis na porta 6379
+```
 
 ## GitHub Actions (Cron + CI)
 
@@ -168,7 +213,9 @@ O workflow em `.github/workflows/deploy.yml` faz tudo:
 | `SEARCH_REGIAO` | Região (opcional) |
 | `TELEGRAM_TOKEN` | Token do Bot Telegram (opcional) |
 | `TELEGRAM_CHAT_ID` | Chat ID do Telegram (opcional) |
+| `SEARCH_LOCATION` | Localização para filtrar na API (opcional). Ex: `São Paulo` |
 | `PROXY_URL` | URL do proxy (opcional) |
+| `REDIS_URL` | URL do Redis para cache (opcional). Ex: `redis://localhost:6379` |
 
 ### Execução manual
 

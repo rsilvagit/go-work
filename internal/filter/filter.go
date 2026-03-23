@@ -2,22 +2,27 @@ package filter
 
 import (
 	"strings"
+	"time"
 
 	"github.com/rsilvagit/go-work/internal/model"
 )
 
+// DefaultMaxAge is the default maximum age for job listings (24 hours).
+const DefaultMaxAge = 24 * time.Hour
+
 // Options holds all filter criteria. Empty fields mean "no filter".
 type Options struct {
-	JobType   string // full-time, part-time, estagio, freelance
-	WorkModel string // remoto, hibrido, presencial
-	Level     string // junior, pleno, senior
-	Region    string // text to match against Location
+	JobType   string        // full-time, part-time, estagio, freelance
+	WorkModel string        // remoto, hibrido, presencial
+	Level     string        // junior, pleno, senior
+	Region    string        // text to match against Location
+	MaxAge    time.Duration // maximum age of job posting (default: 24h)
 }
 
 // Apply filters a slice of jobs, returning only those that match all criteria.
 func Apply(jobs []model.Job, opts Options) []model.Job {
-	if opts.isEmpty() {
-		return jobs
+	if opts.MaxAge == 0 {
+		opts.MaxAge = DefaultMaxAge
 	}
 
 	var result []model.Job
@@ -30,6 +35,11 @@ func Apply(jobs []model.Job, opts Options) []model.Job {
 }
 
 func matchJob(j model.Job, opts Options) bool {
+	// Filtrar vagas mais antigas que MaxAge.
+	if !j.PostedAt.IsZero() && time.Since(j.PostedAt) > opts.MaxAge {
+		return false
+	}
+
 	text := j.FullText()
 
 	if opts.JobType != "" && !containsAny(text, opts.JobType) {
@@ -59,5 +69,5 @@ func containsAny(text, terms string) bool {
 }
 
 func (o Options) isEmpty() bool {
-	return o.JobType == "" && o.WorkModel == "" && o.Level == "" && o.Region == ""
+	return o.JobType == "" && o.WorkModel == "" && o.Level == "" && o.Region == "" && o.MaxAge == 0
 }
